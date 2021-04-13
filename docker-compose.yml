@@ -21,3 +21,50 @@ services:
       KAFKA_LOG_DIRS: /kafka/logs
     depends_on:
       - zookeeper
+
+  spark-base:
+    build:
+      context: .
+      dockerfile: spark/base.Dockerfile
+    init: true
+    depends_on:
+      - kafka
+      - zookeeper
+    networks:
+      - default
+
+  spark-master:
+    build:
+      context: .
+      dockerfile: spark/master.Dockerfile
+    init: true
+    ports:
+      - "8080:8080"
+      - "4040-4050:4040-4050"
+      - "18080:18080"
+    expose:
+      - "7077"
+    depends_on:
+      - kafka
+      - zookeeper
+      - spark-base
+    networks:
+      - default
+
+  spark-worker:
+    build:
+      context: .
+      dockerfile: spark/worker.Dockerfile
+    init: true
+    ports:
+      - "8081:8081"
+    environment:
+      - CORES=1
+      - MEMORY=1G
+    depends_on:
+      - kafka
+      - zookeeper
+      - spark-base
+      - spark-master
+    networks:
+      - default
